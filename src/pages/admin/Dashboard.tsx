@@ -14,7 +14,7 @@ export default function Dashboard() {
 
   return (
     <AdminLayout>
-      <div className="grid gap-7 p-10">
+      <div id="dashboard-content" className="grid gap-7 p-10 bg-gray-50">
         <AdminAnalisysCard
           period={period}
           setPeriod={setPeriod}

@@ -1,32 +1,30 @@
-import {
-  Bar,
-  BarChart,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
+import { useState } from "react";
+import { transactionData } from "../../services/data/transactionData";
+import { filterTransactionByPeriod } from "../../utils/filterTransactionByPeriod";
 
-type DashboardDataPoint = { month: string; value: number };
+import AdminLayout from "../../components/layout/Admin/AdminLayout";
+import AdminAnalisysCard from "../../components/cards/AdminAnalisysCard";
+import AdminChartCard from "../../components/cards/AdminChartCard";
+import AdminTable from "../../components/tables/AdminTable";
 
-export default function AdminDashboardCard({
-  data,
-}: {
-  data: DashboardDataPoint[];
-}) {
+export default function Dashboard() {
+  const [period, setPeriod] = useState("year");
+
+  const filteredData = filterTransactionByPeriod(transactionData, period);
+
   return (
-    <div className="bg-white rounded-lg p-6">
-      <h2 className="text-lg font-semibold mb-4">Statistik Transaksi</h2>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid vertical={false} />
-          <XAxis dataKey="month" axisLine={false} tickLine={false} />
-          <YAxis axisLine={false} tickLine={false} />
-          <Tooltip />
-          <Bar dataKey="value" maxBarSize={50} fill="#FE8507" radius={12} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <AdminLayout>
+      <div id="dashboard-content" className="grid gap-7 p-10 bg-gray-50">
+        <AdminAnalisysCard
+          period={period}
+          setPeriod={setPeriod}
+          data={filteredData}
+        />
+
+        <AdminChartCard data={filteredData} />
+
+        <AdminTable data={filteredData} />
+      </div>
+    </AdminLayout>
   );
 }
