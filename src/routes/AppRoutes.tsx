@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Dashboard from "../pages/Admin/Dashboard";
 import AdminTransactionList from "../pages/Admin/AdminTransactionList";
@@ -9,11 +9,13 @@ import AdminContent from "../pages/Admin/AdminContent";
 export default function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/admin/dashboard" element={<Dashboard />} />
       <Route path="/admin/transactionlist" element={<AdminTransactionList />} />
       <Route path="/admin/userlist" element={<AdminUser />} />
       <Route path="/admin/ticket" element={<AdminTicket />} />
       <Route path="/admin/websitecontent" element={<AdminContent />} />
+      <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
     </Routes>
   );
 }
