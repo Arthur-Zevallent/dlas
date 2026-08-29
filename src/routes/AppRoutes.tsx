@@ -11,8 +11,12 @@ import PosTransactionList from "../pages/Pos/PosTransactionList";
 export default function AppRoutes() {
   return (
     <Routes>
+<<<<<<< HEAD
       <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="/admin/dashboard" element={<Dashboard />} />
+=======
+      <Route path="/admin" element={<Dashboard />} />
+>>>>>>> 9f0de21a449d614f572c7a74c0e35b740f1e2622
       <Route path="/admin/transactionlist" element={<AdminTransactionList />} />
       <Route path="/admin/userlist" element={<AdminUser />} />
       <Route path="/admin/ticket" element={<AdminTicket />} />
