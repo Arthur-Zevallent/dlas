@@ -43,19 +43,15 @@ export default function AdminContent() {
   return (
     <AdminLayout>
       <div className="min-h-screen bg-gray-50/50 py-10 px-4 flex flex-col items-center">
-        {/* Header Section (Centered) */}
         <div className="text-center max-w-xl mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h3 className="text-2xl font-bold text-gray-900">
             Berbagai Konten Website
-          </h2>
+          </h3>
           <p className="mt-1.5 text-sm text-gray-500">
             Kelola beberapa konten untuk website anda
           </p>
         </div>
-
-        {/* Content Cards Container */}
         <div className="w-full max-w-2xl space-y-6">
-          {/* Card Ketentuan Umum */}
           <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
             <h3 className="text-lg font-bold text-gray-900 text-center mb-6">
               Ketentuan Umum di D'las Lembah Asri
@@ -83,7 +79,6 @@ export default function AdminContent() {
             </button>
           </div>
 
-          {/* Card Denah */}
           <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
             <h3 className="text-lg font-bold text-gray-900 text-center mb-6">
               Denah D'las Lembah Asri
@@ -96,8 +91,7 @@ export default function AdminContent() {
                 className="max-w-full h-auto object-contain rounded-2xl max-h-[500px]"
               />
             </div>
-
-            {/* Hidden Input File Manager */}
+            
             <input
               type="file"
               ref={fileInputRef}
