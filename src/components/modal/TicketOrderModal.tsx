@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, Calendar, Plus, Minus, ChevronDown } from "lucide-react";
 import dlasLogo from "../../assets/images/logo.webp";
+import { createPosTransaction } from "../../services/api/posService";
 
 interface TicketOrderModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export default function TicketOrderModal({
   const [nonCashMethod, setNonCashMethod] = useState("qris");
   const [ticketQuantity, setTicketQuantity] = useState(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen || !ticketData) return null;
 
@@ -48,24 +50,45 @@ export default function TicketOrderModal({
     onClose();
   };
 
-  const handlePay = () => {
-    onSuccessPay({
-      ticketData,
-      quantity: ticketQuantity,
-      totalPrice,
-      paymentType,
-      nonCashMethod: paymentType === "non-tunai" ? nonCashMethod : null,
-      visitDate: formattedDate,
-      officerName,
-    });
-    handleCloseModal();
+  const handlePay = async () => {
+    setLoading(true);
+    try {
+      const payload = {
+        ticket_id: ticketData.id,
+        quantity: ticketQuantity,
+        total_price: totalPrice,
+        payment_type: paymentType,
+        non_cash_method: paymentType === "non-tunai" ? nonCashMethod : null,
+        officer_name: officerName,
+        visit_date: formattedDate,
+      };
+
+      const responseData = await createPosTransaction(payload);
+
+      onSuccessPay({
+        ...responseData,
+        ticketData,
+        quantity: ticketQuantity,
+        totalPrice,
+        paymentType,
+        nonCashMethod: paymentType === "non-tunai" ? nonCashMethod : null,
+        visitDate: formattedDate,
+        officerName,
+      });
+
+      handleCloseModal();
+    } catch (error) {
+      console.error(error);
+      alert("Gagal memproses transaksi. Silakan coba lagi.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white rounded-[32px] w-full max-w-[420px] p-6 shadow-2xl relative my-auto space-y-4 border border-gray-100">
         
-        {/* Modal Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
             Pesan Tiket
@@ -79,11 +102,9 @@ export default function TicketOrderModal({
           </button>
         </div>
 
-        {/* STEP 1: Form Input Jumlah & Ketentuan */}
         {step === 1 && (
           <>
             <div className="space-y-3.5">
-              {/* Input Nama Petugas */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-400 block">
                   Nama Petugas Loket
@@ -97,7 +118,6 @@ export default function TicketOrderModal({
                 />
               </div>
 
-              {/* Input Tanggal Berlibur */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-400 block">
                   Kapan anda berlibur?
@@ -110,7 +130,6 @@ export default function TicketOrderModal({
                 </div>
               </div>
 
-              {/* Counter Jumlah Tiket */}
               <div className="flex items-center justify-between pt-1">
                 <span className="text-xs font-semibold text-gray-900">
                   Jumlah tiket yang dibeli
@@ -139,7 +158,6 @@ export default function TicketOrderModal({
                 </div>
               </div>
 
-              {/* Ringkasan Biaya Step 1 */}
               <div className="border-t border-gray-100 pt-3 space-y-2 text-xs">
                 <div className="flex items-center justify-between text-gray-400">
                   <span>Harga Tiket Paket</span>
@@ -159,7 +177,6 @@ export default function TicketOrderModal({
                 </div>
               </div>
 
-              {/* Ketentuan Tiket */}
               <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-2.5">
                 <h4 className="text-xs font-bold text-gray-900">Ketentuan Tiket</h4>
                 <div className="space-y-2 text-[11px] text-gray-500">
@@ -201,7 +218,6 @@ export default function TicketOrderModal({
           </>
         )}
 
-        {/* STEP 2: Menu Pembayaran */}
         {step === 2 && (
           <>
             <div className="p-3.5 border border-gray-200/80 rounded-2xl flex items-center gap-3.5 bg-white">
@@ -317,15 +333,15 @@ export default function TicketOrderModal({
 
             <button
               type="button"
-              disabled={!isConfirmed}
+              disabled={!isConfirmed || loading}
               onClick={handlePay}
               className={`w-full py-3.5 rounded-full text-sm font-semibold transition shadow-xs ${
-                isConfirmed
+                isConfirmed && !loading
                   ? "bg-[#82C366] hover:bg-[#2E9310] text-white cursor-pointer"
                   : "bg-[#82C366]/50 text-white/80 cursor-not-allowed"
               }`}
             >
-              Sudah Melakukan Pembayaran
+              {loading ? "Memproses..." : "Sudah Melakukan Pembayaran"}
             </button>
           </>
         )}
