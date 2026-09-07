@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PosLayout from "../../components/layout/Pos/PosLayout";
 import PosSopSection from "../../components/cards/PosSopSection";
 import PosSidebarStep from "../../components/cards/PosSidebarStep";
@@ -8,13 +8,18 @@ import TicketRegularCard from "../../components/cards/TicketRegularCard";
 import TicketDetailModal from "../../components/modal/TicketDetailModal";
 import TicketOrderModal from "../../components/modal/TicketOrderModal";
 import TicketPaymentSuccessModal from "../../components/modal/TicketPaymentSuccessModal";
-import { TICKET_PACKAGES } from "../../services/data/posTicketData";
-import { REGULAR_TICKETS } from "../../services/data/posRegularTicketData";
+import { getTickets, getPackageTickets } from "../../services/api/ticketApi";
 
 export default function PosMain() {
-  const [isSopCompleted, setIsSopCompleted] = useState(false);
+  const [isSopCompleted, setIsSopCompleted] = useState<boolean>(() => {
+    return localStorage.getItem("pos_sop_completed") === "true";
+  });
+
   const [activeTab, setActiveTab] = useState<"paket" | "regular">("paket");
   const [visitDate, setVisitDate] = useState<Date | undefined>(new Date());
+
+  const [regularTickets, setRegularTickets] = useState<any[]>([]);
+  const [packageTickets, setPackageTickets] = useState<any[]>([]);
 
   const [detailModal, setDetailModal] = useState<{
     isOpen: boolean;
@@ -37,12 +42,58 @@ export default function PosMain() {
     isOpen: false,
   });
 
+  useEffect(() => {
+    async function fetchAllTickets() {
+      try {
+        const [regRes, pkgRes] = await Promise.all([
+          getTickets(),
+          getPackageTickets(),
+        ]);
+
+        const mappedRegular = (regRes.data || regRes || []).map((item: any) => ({
+          id: item.id,
+          title: item.namaTiket,
+          name: item.namaTiket,
+          price: item.hargaWeekdays || item.hargaWeekend || 0,
+          description: item.deskripsi || "",
+          status: item.status || "Aktif",
+          image: item.gambar?.[0] || item.image || "",
+          ketentuan: item.ketentuan || [],
+        }));
+
+        const mappedPackage = (pkgRes.data || pkgRes || []).map((item: any) => ({
+          id: item.id,
+          title: item.namaTiket,
+          name: item.namaTiket,
+          price: item.hargaWeekdays || item.hargaWeekend || 0,
+          description: item.deskripsi || "",
+          status: item.status || "Aktif",
+          image: item.gambar?.[0] || item.image || "",
+          attractions: item.wahana || [],
+          ketentuan: item.ketentuan || [],
+        }));
+
+        setRegularTickets(mappedRegular);
+        setPackageTickets(mappedPackage);
+      } catch (err) {
+        console.error("Gagal mengambil data tiket:", err);
+      }
+    }
+
+    fetchAllTickets();
+  }, []);
+
+  const handleCompleteSop = () => {
+    localStorage.setItem("pos_sop_completed", "true");
+    setIsSopCompleted(true);
+  };
+
   const handleOpenOrder = (ticket: any) => {
     setOrderModal({
       isOpen: true,
       data: {
         id: ticket.id,
-        title: ticket.title,
+        title: ticket.title || ticket.name,
         price: ticket.price,
         description: ticket.description,
         attractions: ticket.attractions,
@@ -54,7 +105,7 @@ export default function PosMain() {
   return (
     <PosLayout>
       {!isSopCompleted ? (
-        <PosSopSection onComplete={() => setIsSopCompleted(true)} />
+        <PosSopSection onComplete={handleCompleteSop} />
       ) : (
         <div className="space-y-4 pb-12">
           <div>
@@ -75,7 +126,7 @@ export default function PosMain() {
               <VisitDatePicker
                 selectedDate={visitDate}
                 onDateChange={setVisitDate}
-                onSearch={() => console.log("Cari tanggal:", visitDate)}
+                onSearch={() => {}}
               />
 
               <div className="bg-[#F8F9FA] p-1.5 rounded-full border border-gray-100 flex items-center">
@@ -105,7 +156,7 @@ export default function PosMain() {
 
               {activeTab === "paket" ? (
                 <div className="grid grid-cols-3 gap-5 pt-1">
-                  {TICKET_PACKAGES.map((pkg) => (
+                  {packageTickets.map((pkg) => (
                     <TicketPackageCard
                       key={pkg.id}
                       pkg={pkg}
@@ -121,7 +172,7 @@ export default function PosMain() {
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-4 pt-1">
-                  {REGULAR_TICKETS.map((ticket) => (
+                  {regularTickets.map((ticket) => (
                     <TicketRegularCard
                       key={ticket.id}
                       ticket={ticket}
@@ -157,10 +208,11 @@ export default function PosMain() {
         ticketData={orderModal.data}
         visitDate={visitDate}
         onClose={() => setOrderModal({ isOpen: false })}
-        onSuccessPay={(summary) => {
+        onSuccessPay={(modalOrderPayload) => {
+          setOrderModal({ isOpen: false });
           setSuccessModal({
             isOpen: true,
-            data: summary,
+            data: modalOrderPayload,
           });
         }}
       />
@@ -172,4 +224,4 @@ export default function PosMain() {
       />
     </PosLayout>
   );
-}
+} 

@@ -16,6 +16,15 @@ export default function PosSopSection({ onComplete }: PosSopSectionProps) {
     );
   };
 
+  // Fungsi untuk handle "Checklist Semua" / "Batalkan Semua"
+  const handleToggleAll = () => {
+    if (checkedIds.length === SOP_ITEMS.length) {
+      setCheckedIds([]); // Kalau semua sudah dicentang, kosongkan
+    } else {
+      setCheckedIds(SOP_ITEMS.map((item) => item.id)); // Kalau belum, centang semua ID
+    }
+  };
+
   const isAllChecked = checkedIds.length === SOP_ITEMS.length;
 
   return (
@@ -27,6 +36,17 @@ export default function PosSopSection({ onComplete }: PosSopSectionProps) {
         <p className="text-sm text-gray-500 mt-1.5 font-normal">
           Checklist beberapa point jika sudah anda laksanakan
         </p>
+      </div>
+
+      {/* Tombol Checklist Semua */}
+      <div className="w-full max-w-[500px] flex justify-end mb-3 px-1">
+        <button
+          type="button"
+          onClick={handleToggleAll}
+          className="text-xs font-semibold text-[#2E9310] hover:text-[#25770d] transition cursor-pointer flex items-center gap-1.5"
+        >
+          <span>{isAllChecked ? "Batalkan Semua" : "Checklist Semua"}</span>
+        </button>
       </div>
 
       <div className="w-full max-w-[500px] bg-[#F2F4F7] rounded-2xl border border-gray-200/60 overflow-hidden shadow-sm">

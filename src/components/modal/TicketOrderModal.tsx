@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Calendar, Plus, Minus, ChevronDown } from "lucide-react";
+import axios from "axios";
 import dlasLogo from "../../assets/images/logo.webp";
-import { createPosTransaction } from "../../services/api/posService";
 
 interface TicketOrderModalProps {
   isOpen: boolean;
@@ -12,9 +12,10 @@ interface TicketOrderModalProps {
     price: number;
     description?: string;
     image?: string;
+    type?: string;
   };
   visitDate?: Date;
-  onSuccessPay: (summary: any) => void;
+  onSuccessPay?: (summary: any) => void;
 }
 
 export default function TicketOrderModal({
@@ -27,7 +28,7 @@ export default function TicketOrderModal({
   const [step, setStep] = useState<1 | 2>(1);
   const [officerName, setOfficerName] = useState("");
   const [paymentType, setPaymentType] = useState<"tunai" | "non-tunai">("tunai");
-  const [nonCashMethod, setNonCashMethod] = useState("qris");
+  const [nonCashMethod, setNonCashMethod] = useState("QRIS");
   const [ticketQuantity, setTicketQuantity] = useState(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,13 +37,21 @@ export default function TicketOrderModal({
 
   const totalPrice = (ticketData.price || 0) * ticketQuantity;
 
-  const formattedDate = visitDate
+  const formattedDateUI = visitDate
     ? new Date(visitDate).toLocaleDateString("id-ID", {
         day: "numeric",
         month: "long",
         year: "numeric",
       })
-    : "13 Juli 2024";
+    : new Date().toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
+  const formattedDateISO = visitDate
+    ? new Date(visitDate).toISOString().split("T")[0]
+    : new Date().toISOString().split("T")[0];
 
   const handleCloseModal = () => {
     setStep(1);
@@ -53,42 +62,105 @@ export default function TicketOrderModal({
   const handlePay = async () => {
     setLoading(true);
     try {
+      let rawToken =
+        localStorage.getItem("accessToken") || localStorage.getItem("token");
+
+      if (rawToken) {
+        rawToken = rawToken.replace(/^"(.*)"$/, "$1").trim();
+      }
+
+      if (!rawToken) {
+        alert("Session login telah habis, silakan login ulang.");
+        setLoading(false);
+        return;
+      }
+
+      const authHeaderValue = rawToken.startsWith("Bearer ")
+        ? rawToken
+        : `Bearer ${rawToken}`;
+
       const payload = {
-        ticket_id: ticketData.id,
-        quantity: ticketQuantity,
-        total_price: totalPrice,
-        payment_type: paymentType,
-        non_cash_method: paymentType === "non-tunai" ? nonCashMethod : null,
-        officer_name: officerName,
-        visit_date: formattedDate,
+        namaPetugas: officerName.trim() || "Kasir",
+        metodePembayaran:
+          paymentType === "non-tunai" ? nonCashMethod.toUpperCase() : "TUNAI",
+        items: [
+          {
+            ticketId: ticketData.id,
+            tanggalBerkunjung: formattedDateISO,
+            jumlah: Number(ticketQuantity),
+          },
+        ],
       };
 
-      const responseData = await createPosTransaction(payload);
+      const response = await axios.post(
+        "/api/v1/pos/checkout",
+        payload,
+        {
+          headers: {
+            Authorization: authHeaderValue,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      onSuccessPay({
-        ...responseData,
-        ticketData,
+      const resData = response.data;
+      const firstTrx = Array.isArray(resData)
+        ? resData[0]
+        : resData?.data || resData;
+
+      const realTrxId =
+        firstTrx?.kodeTransaksi ||
+        firstTrx?.idTransaksi ||
+        firstTrx?.id ||
+        firstTrx?._id ||
+        resData?.kodeTransaksi ||
+        resData?.id;
+
+      const modalOrderPayload = {
+        transactionId: String(realTrxId),
+        ticketData: {
+          id: ticketData.id,
+          title: ticketData.title,
+          price: ticketData.price,
+        },
         quantity: ticketQuantity,
-        totalPrice,
-        paymentType,
+        totalPrice: totalPrice,
+        paymentType: paymentType,
         nonCashMethod: paymentType === "non-tunai" ? nonCashMethod : null,
-        visitDate: formattedDate,
-        officerName,
-      });
+        visitDate: formattedDateUI,
+      };
 
+      // Tutup modal order terlebih dahulu, lalu lempar data ke parent (PosMain)
       handleCloseModal();
-    } catch (error) {
-      console.error(error);
-      alert("Gagal memproses transaksi. Silakan coba lagi.");
+      
+      if (onSuccessPay) {
+        onSuccessPay(modalOrderPayload);
+      }
+    } catch (error: any) {
+      console.error("Gagal POS Checkout:", error.response || error);
+
+      if (error.response?.status === 401) {
+        alert(
+          "Sesi kamu sudah berakhir (401 Unauthorized). Silakan Log Out lalu Log In kembali untuk mendapatkan token baru."
+        );
+      } else {
+        const backendMsg = error.response?.data?.message;
+        alert(
+          `Gagal memproses transaksi: ${
+            Array.isArray(backendMsg)
+              ? backendMsg.join(", ")
+              : backendMsg || error.message
+          }`
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white rounded-[32px] w-full max-w-[420px] p-6 shadow-2xl relative my-auto space-y-4 border border-gray-100">
-        
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 tracking-tight">
             Pesan Tiket
@@ -125,7 +197,7 @@ export default function TicketOrderModal({
                 <div className="flex items-center gap-3 border border-gray-200 rounded-2xl px-4 py-3 bg-white">
                   <Calendar size={18} className="text-gray-400" />
                   <span className="text-xs font-semibold text-gray-900">
-                    {formattedDate}
+                    {formattedDateUI}
                   </span>
                 </div>
               </div>
@@ -170,7 +242,9 @@ export default function TicketOrderModal({
                 </div>
 
                 <div className="pt-2 border-t border-dashed border-gray-200 flex items-center justify-between">
-                  <span className="text-gray-400 font-medium">Total Pembayaran</span>
+                  <span className="text-gray-400 font-medium">
+                    Total Pembayaran
+                  </span>
                   <span className="text-sm font-bold text-gray-900">
                     Rp{totalPrice.toLocaleString("id-ID")}
                   </span>
@@ -178,14 +252,17 @@ export default function TicketOrderModal({
               </div>
 
               <div className="p-4 border border-gray-100 rounded-2xl bg-gray-50/50 space-y-2.5">
-                <h4 className="text-xs font-bold text-gray-900">Ketentuan Tiket</h4>
+                <h4 className="text-xs font-bold text-gray-900">
+                  Ketentuan Tiket
+                </h4>
                 <div className="space-y-2 text-[11px] text-gray-500">
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[10px] font-semibold text-gray-400 shrink-0">
                       01
                     </span>
                     <p className="pt-0.5 leading-tight">
-                      Maksimal anda memasuki area D'las untuk tiket paket hemat yaitu pukul 15.00
+                      Maksimal anda memasuki area D'las untuk tiket paket
+                      hemat yaitu pukul 15.00
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
@@ -193,7 +270,8 @@ export default function TicketOrderModal({
                       02
                     </span>
                     <p className="pt-0.5 leading-tight">
-                      Pembelian tiket paket sudah termasuk tiket masuk area D'las Lembah Asri
+                      Pembelian tiket paket sudah termasuk tiket masuk area
+                      D'las Lembah Asri
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
@@ -201,7 +279,8 @@ export default function TicketOrderModal({
                       03
                     </span>
                     <p className="pt-0.5 leading-tight">
-                      Tiket tidak dapat digunakan setelah tanggal berlibur yang anda isi/tiket sudah digunakan
+                      Tiket tidak dapat digunakan setelah tanggal berlibur
+                      yang anda isi/tiket sudah digunakan
                     </p>
                   </div>
                 </div>
@@ -233,13 +312,16 @@ export default function TicketOrderModal({
                   {ticketData.title}
                 </h3>
                 <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">
-                  {ticketData.description || "Penjelasan singkat tiket wahana D'las"}
+                  {ticketData.description ||
+                    "Penjelasan singkat tiket wahana D'las"}
                 </p>
                 <div className="mt-1 flex items-baseline gap-1">
                   <span className="font-semibold text-xs text-gray-900">
                     Rp{ticketData.price?.toLocaleString("id-ID")}
                   </span>
-                  <span className="text-[10px] text-gray-400 font-normal">/tiket</span>
+                  <span className="text-[10px] text-gray-400 font-normal">
+                    /tiket
+                  </span>
                 </div>
               </div>
             </div>
@@ -258,7 +340,9 @@ export default function TicketOrderModal({
                     onChange={() => setPaymentType("tunai")}
                     className="w-4 h-4 accent-[#2E9310] cursor-pointer"
                   />
-                  <span className="text-xs font-semibold text-gray-900">Tunai</span>
+                  <span className="text-xs font-semibold text-gray-900">
+                    Tunai
+                  </span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -270,7 +354,9 @@ export default function TicketOrderModal({
                     onChange={() => setPaymentType("non-tunai")}
                     className="w-4 h-4 accent-[#2E9310] cursor-pointer"
                   />
-                  <span className="text-xs font-semibold text-gray-900">Non-Tunai</span>
+                  <span className="text-xs font-semibold text-gray-900">
+                    Non-Tunai
+                  </span>
                 </label>
               </div>
 
@@ -285,7 +371,7 @@ export default function TicketOrderModal({
                       onChange={(e) => setNonCashMethod(e.target.value)}
                       className="w-full appearance-none bg-white border border-gray-200 rounded-2xl px-4 py-3 text-xs font-semibold text-gray-900 focus:outline-none focus:border-[#2E9310] cursor-pointer pr-10"
                     >
-                      <option value="qris">QRIS Mandiri</option>
+                      <option value="QRIS">QRIS Mandiri</option>
                     </select>
                     <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
                       <ChevronDown size={16} />
@@ -298,7 +384,9 @@ export default function TicketOrderModal({
             <div className="p-4 border border-gray-200/80 rounded-2xl space-y-3 bg-white text-xs">
               <div className="flex items-center justify-between text-gray-500">
                 <span>Berlibur pada</span>
-                <span className="text-gray-900 font-medium">{formattedDate}</span>
+                <span className="text-gray-900 font-medium">
+                  {formattedDateUI}
+                </span>
               </div>
 
               <div className="flex items-center justify-between text-gray-500">
@@ -312,7 +400,9 @@ export default function TicketOrderModal({
               </div>
 
               <div className="pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
-                <span className="text-gray-500 font-medium">Total Pembayaran</span>
+                <span className="text-gray-500 font-medium">
+                  Total Pembayaran
+                </span>
                 <span className="text-sm font-semibold text-gray-900">
                   Rp{totalPrice.toLocaleString("id-ID")}
                 </span>
@@ -335,7 +425,7 @@ export default function TicketOrderModal({
               type="button"
               disabled={!isConfirmed || loading}
               onClick={handlePay}
-              className={`w-full py-3.5 rounded-full text-sm font-semibold transition shadow-xs ${
+              className={`w-full py-3.5 rounded-full text-sm font-semibold transition shadow-sm ${
                 isConfirmed && !loading
                   ? "bg-[#82C366] hover:bg-[#2E9310] text-white cursor-pointer"
                   : "bg-[#82C366]/50 text-white/80 cursor-not-allowed"
@@ -345,7 +435,6 @@ export default function TicketOrderModal({
             </button>
           </>
         )}
-
       </div>
     </div>
   );

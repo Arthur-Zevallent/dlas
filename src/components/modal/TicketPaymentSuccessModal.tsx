@@ -7,6 +7,7 @@ interface TicketPaymentSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   orderData?: {
+    transactionId?: string; // <-- Ditambahkan agar menerima Real TRX ID
     ticketData?: {
       id?: string;
       title?: string;
@@ -29,8 +30,17 @@ export default function TicketPaymentSuccessModal({
 
   const ticketTitle = orderData.ticketData?.title || "Tiket Masuk";
   const quantity = orderData.quantity || 1;
-  const visitDate = orderData.visitDate || "10 Juli 2024";
-  const transactionId = "0920102812";
+
+  const todayFormatted = new Date().toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const visitDate = orderData.visitDate || todayFormatted;
+
+  // PERBAIKAN: Gunakan transactionId dari orderData, bukan ticketData.id!
+  const transactionId =
+    orderData.transactionId || orderData.ticketData?.id || "0920102812";
 
   const qrPayload = JSON.stringify({
     trxId: transactionId,
@@ -43,7 +53,6 @@ export default function TicketPaymentSuccessModal({
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white rounded-[32px] w-full max-w-[400px] p-5 shadow-2xl relative my-auto space-y-4 border border-gray-100">
-        
         <div className="flex items-start justify-between px-1">
           <div className="flex items-start gap-3">
             <img
@@ -90,7 +99,7 @@ export default function TicketPaymentSuccessModal({
             <h3 className="text-sm font-bold text-gray-900 mt-3">
               {ticketTitle}
             </h3>
-            <p className="text-[11px] text-gray-400 font-normal mt-0.5">
+            <p className="text-[11px] text-gray-400 font-normal mt-0.5 break-all max-w-[260px]">
               ID : {transactionId}
             </p>
           </div>
@@ -131,7 +140,6 @@ export default function TicketPaymentSuccessModal({
           <Download size={18} />
           <span>Print Tiket</span>
         </button>
-
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import { LogOut, CircleUserRound } from "lucide-react";
 import Button from "../../ui/Button";
 import logo from "../../../assets/images/Logo.webp";
+import { useAuth } from "../../../context/AuthContext"; // Import useAuth
 
 const NAV_ITEMS = [
   {
@@ -10,11 +11,13 @@ const NAV_ITEMS = [
   },
   {
     label: "Layanan Tiket",
-    path: "/pos",
+    path: "/pos/dashboard", // Disesuaikan dengan URL dashboard POS kamu
   },
 ];
 
 export default function PosHeader() {
+  const { user, logout } = useAuth(); // Ambil user & fungsi logout
+
   return (
     <header className="h-22.5 w-full px-10 fixed z-99 bg-white">
       <div className="mx-auto h-full flex items-center justify-between">
@@ -25,7 +28,7 @@ export default function PosHeader() {
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === "/pos"} // <-- Bikin matching exact untuk root /pos
+              end={item.path === "/pos/dashboard"}
               className={({ isActive }) =>
                 `text-sm font-medium transition ${
                   isActive ? "text-black font-semibold" : "text-gray-500 hover:text-black"
@@ -46,13 +49,14 @@ export default function PosHeader() {
               size={30}
               className="text-dark-gray rounded-full bg-border p-1.5"
             />
-            <span className="text-sm font-medium">Loket A</span>
+            <span className="text-sm font-medium">{user?.name || "Loket A"}</span>
           </div>
 
           <Button
             variant="outline"
             className="p-3.5 hover:bg-danger-soft border-border"
             size="undefined"
+            onClick={logout} // Panggil fungsi logout saat diklik
           >
             <LogOut size={18} className="text-danger" />
           </Button>

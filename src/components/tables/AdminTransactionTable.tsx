@@ -10,11 +10,11 @@ import TransactionDetailModal from "../modal/TransactionDetailModal";
 
 import usePagination from "../../hooks/usePagination";
 
-import { transactionTableData } from "../../services/data/transactionTableData";
+import type { TransactionTable } from "../../types/transactionTable";
 import { filterTransactionByDate } from "../../utils/filterTransactionByDate";
 
 interface AdminTransactionTableProps {
-  data: typeof transactionTableData;
+  data: TransactionTable[];
 }
 
 export default function AdminTransactionTable({
@@ -25,11 +25,9 @@ export default function AdminTransactionTable({
   const [selectedDate, setSelectedDate] = useState<Date>();
 
   const [openDetail, setOpenDetail] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<
-    (typeof transactionTableData)[number] | null
-  >(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionTable | null>(null);
 
-  const handleDetail = (transaction: (typeof transactionTableData)[number]) => {
+  const handleDetail = (transaction: TransactionTable) => {
     setSelectedTransaction(transaction);
     setOpenDetail(true);
   };
@@ -59,16 +57,16 @@ export default function AdminTransactionTable({
     const keyword = searchValue.toLowerCase();
 
     return (
-      item.id.toLowerCase().includes(keyword) ||
-      item.ticket.toLowerCase().includes(keyword) ||
-      item.customer.toLowerCase().includes(keyword)
+      (item.id && item.id.toLowerCase().includes(keyword)) ||
+      (item.ticket && item.ticket.toLowerCase().includes(keyword)) ||
+      (item.customer && item.customer.toLowerCase().includes(keyword))
     );
   });
 
   const filteredData =
-    status === "all" ? searchedData : (
-      searchedData.filter((item) => item.status === status)
-    );
+    status === "all"
+      ? searchedData
+      : searchedData.filter((item) => item.status === status);
 
   const dateFilteredData = filterTransactionByDate(filteredData, selectedDate);
 

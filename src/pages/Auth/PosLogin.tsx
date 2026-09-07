@@ -6,7 +6,7 @@ import logo from "../../assets/images/logo.webp";
 import AdminFooter from "../../components/layout/Admin/AdminFooter";
 import Button from "../../components/ui/Button";
 
-export default function AdminLogin() {
+export default function PosLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -29,19 +29,19 @@ export default function AdminLogin() {
         password,
       });
 
-      // VALIDASI ROLE: Hanya superadmin yang boleh masuk lewat portal ini!
+      // VALIDASI ROLE: Tolak jika akun yang dipakai adalah Super Admin!
       const userRole = loggedInUser?.role?.toLowerCase();
-      if (userRole !== "superadmin") {
-        setError("Akun ini bukan Super Admin! Silakan login melalui portal POS/Loket.");
+      if (userRole === "superadmin") {
+        setError("Akun Super Admin tidak diperbolehkan login di portal POS!");
         setLoading(false);
         return;
       }
 
-      console.log("SUPERADMIN LOGIN SUCCESS:", loggedInUser);
-      navigate("/admin/dashboard", { replace: true });
+      console.log("POS USER LOGIN SUCCESS:", loggedInUser);
+      navigate("/pos/dashboard", { replace: true });
     } catch (err: unknown) {
-      console.error("Login Admin error:", err);
-      setError("Email atau kata sandi Super Admin salah.");
+      console.error("Login POS error:", err);
+      setError("Email atau kata sandi petugas loket salah.");
     } finally {
       setLoading(false);
     }
@@ -55,11 +55,11 @@ export default function AdminLogin() {
 
           <div className="flex flex-col items-center mt-7">
             <h6 className="text-[28px] font-semibold">
-              Login Super Admin
+              Login Petugas POS / Loket
             </h6>
 
             <p className="mt-2 text-sm font-normal text-dark-gray">
-              Masuk dengan akun Super Admin untuk mengelola sistem
+              Masuk dengan akun kasir/loket untuk melayani pengunjung
             </p>
           </div>
 
@@ -70,7 +70,7 @@ export default function AdminLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Masukkan Email Super Admin"
+                placeholder="Masukkan Email Petugas"
                 required
                 className="h-11 w-full text-sm outline-none transition"
               />
@@ -108,7 +108,7 @@ export default function AdminLogin() {
             disabled={loading}
             className="mt-7 w-129 h-12"
           >
-            {loading ? "Memproses..." : "Masuk sebagai Super Admin"}
+            {loading ? "Memproses..." : "Masuk ke POS"}
           </Button>
         </form>
       </main>
