@@ -1,36 +1,35 @@
-import { CircleUserRound } from "lucide-react";
+import { TicketX } from "lucide-react";
 
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
 
-import type { UserTable } from "../../types/userTable";
+import type { Ticket } from "../../types/ticket";
 
-interface DeleteUserModalProps {
+interface DeleteTicketModalProps {
   open: boolean;
   onClose: () => void;
-  user: UserTable | null;
-  onConfirm: (user: UserTable) => void | Promise<void>;
   loading?: boolean;
-  error?: string | null;
+  ticket: Ticket | null;
+  onConfirm: (ticket: Ticket) => void;
 }
 
-export default function DeleteUserModal({
+export default function DeleteTicketModal({
   open,
   onClose,
-  user,
+  ticket,
   onConfirm,
   loading = false,
-  error = null,
-}: DeleteUserModalProps) {
-  if (!user) return null;
+}: DeleteTicketModalProps) {
+  if (!ticket) return null;
 
   const handleConfirm = () => {
-    onConfirm(user);
+    onConfirm(ticket);
   };
 
   return (
     <Modal open={open} onClose={onClose} width="max-w-[398px] p-3">
       <div className="px-4 py-3">
+        {/* ICON */}
         <div className="flex justify-center">
           <div
             className="
@@ -43,37 +42,33 @@ export default function DeleteUserModal({
               bg-red-100
             "
           >
-            <CircleUserRound
-              size={26}
-              className="text-red-500"
-              strokeWidth={2}
-            />
+            <TicketX size={26} className="text-red-500" strokeWidth={2} />
           </div>
         </div>
 
+        {/* TEXT */}
         <div className="mt-5 text-center">
           <h2 className="text-xl font-semibold text-black">
             Apakah anda yakin?
           </h2>
 
           <p className="mt-2.5 px-2 text-md leading-5 text-dark-gray">
-            Jika anda hapus akun pengguna, maka tidak dapat dipulihkan kembali
+            Jika anda hapus tiket ini, maka data tiket tidak dapat dipulihkan
+            kembali.
           </p>
 
           {/* NAMA TIKET */}
           <p className="mt-3 px-2 text-sm font-semibold text-black">
-            "{user.namaPengguna}"
+            "{ticket.namaTiket}"
           </p>
-
-          {error && <p className="mt-2.5 px-2 text-sm text-red-500">{error}</p>}
         </div>
 
+        {/* BUTTON */}
         <div className="mt-8 grid grid-cols-2 gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            disabled={loading}
             className="
               h-9
               w-full
@@ -84,7 +79,6 @@ export default function DeleteUserModal({
               font-semibold
               shadow-sm
               hover:bg-gray-50
-              disabled:opacity-60
             "
           >
             Kembali
@@ -94,14 +88,12 @@ export default function DeleteUserModal({
             type="button"
             variant="danger"
             onClick={handleConfirm}
-            disabled={loading}
             className="
               h-9
               w-full
               rounded-full
               text-md
               font-semibold
-              disabled:opacity-60
             "
           >
             {loading ? "Menghapus..." : "Ya, Hapus"}

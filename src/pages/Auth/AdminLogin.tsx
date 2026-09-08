@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/images/logo.webp";
 import AdminFooter from "../../components/layout/Admin/AdminFooter";
+
 import Button from "../../components/ui/Button";
 
 export default function AdminLogin() {
   const { login } = useAuth();
-  const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -24,24 +22,18 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const loggedInUser = await login({
+      const user = await login({
         email: email.trim(),
         password,
       });
 
-      // VALIDASI ROLE: Hanya superadmin yang boleh masuk lewat portal ini!
-      const userRole = loggedInUser?.role?.toLowerCase();
-      if (userRole !== "superadmin") {
-        setError("Akun ini bukan Super Admin! Silakan login melalui portal POS/Loket.");
-        setLoading(false);
-        return;
-      }
+      console.log("USER LOGIN:", user);
 
-      console.log("SUPERADMIN LOGIN SUCCESS:", loggedInUser);
-      navigate("/admin/dashboard", { replace: true });
-    } catch (err: unknown) {
-      console.error("Login Admin error:", err);
-      setError("Email atau kata sandi Super Admin salah.");
+      window.location.href = "/admin/dashboard";
+    } catch (error: unknown) {
+      console.error("Login error:", error);
+
+      setError("Email atau kata sandi salah.");
     } finally {
       setLoading(false);
     }
@@ -55,11 +47,11 @@ export default function AdminLogin() {
 
           <div className="flex flex-col items-center mt-7">
             <h6 className="text-[28px] font-semibold">
-              Login Super Admin
+              Selamat Datang Kembali
             </h6>
 
             <p className="mt-2 text-sm font-normal text-dark-gray">
-              Masuk dengan akun Super Admin untuk mengelola sistem
+              Masuk ke akun anda untuk proses selanjutnya
             </p>
           </div>
 
@@ -70,7 +62,7 @@ export default function AdminLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Masukkan Email Super Admin"
+                placeholder="Masukkan Email"
                 required
                 className="h-11 w-full text-sm outline-none transition"
               />
@@ -82,7 +74,7 @@ export default function AdminLogin() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan Kata Sandi"
+                placeholder="Masukkan Kata Sandi Anda"
                 required
                 className="h-11 w-full text-sm outline-none transition"
               />
@@ -91,16 +83,14 @@ export default function AdminLogin() {
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
               >
-                {showPassword ? (
+                {showPassword ?
                   <EyeOff size={20} className="text-dark-gray" />
-                ) : (
-                  <Eye size={20} className="text-dark-gray" />
-                )}
+                : <Eye size={20} className="text-dark-gray" />}
               </button>
             </div>
           </div>
 
-          {error && <p className="mt-2 text-sm text-red-500 font-medium">{error}</p>}
+          {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
 
           <Button
             type="submit"
@@ -108,7 +98,7 @@ export default function AdminLogin() {
             disabled={loading}
             className="mt-7 w-129 h-12"
           >
-            {loading ? "Memproses..." : "Masuk sebagai Super Admin"}
+            {loading ? "Memproses..." : "Masuk"}
           </Button>
         </form>
       </main>
