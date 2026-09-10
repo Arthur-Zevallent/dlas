@@ -1,4 +1,4 @@
-import TicketCard from "./TicketCard";
+import TicketCard from "../cards/TicketCard"; // Sesuaikan dengan posisi folder sebenarnya
 import type { Ticket } from "../../types/ticket";
 
 interface TicketListContentProps {

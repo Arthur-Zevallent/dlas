@@ -3,11 +3,12 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import AdminLogin from "../pages/Auth/AdminLogin";
 import PosLogin from "../pages/Auth/PosLogin";
 
-import Dashboard from "../pages/admin/Dashboard";
-import AdminTransactionList from "../pages/admin/AdminTransactionList";
+import Dashboard from "../pages/admin/DashboardPage/Dashboard";
+import AdminTransactionList from "../pages/admin/TransactionPage/AdminTransactionList";
 import AdminUser from "../pages/admin/AdminUser";
 import AdminTicket from "../pages/admin/AdminTicket";
 import AdminContent from "../pages/admin/AdminContent";
+import AdminEditTerms from "../pages/admin/AdminEditTerms";
 import AddTicket from "../pages/admin/AddTicket";
 import EditTicket from "../pages/admin/EditTicket";
 
@@ -37,15 +38,13 @@ export default function AppRoutes() {
         }
       >
         <Route path="/admin/dashboard" element={<Dashboard />} />
-        <Route
-          path="/admin/transactionlist"
-          element={<AdminTransactionList />}
-        />
+        <Route path="/admin/transactionlist"element={<AdminTransactionList />}/>
         <Route path="/admin/userlist" element={<AdminUser />} />
         <Route path="/admin/ticket" element={<AdminTicket />} />
         <Route path="/admin/ticket/add" element={<AddTicket />} />
         <Route path="/admin/ticket/edit/:id" element={<EditTicket />} />
         <Route path="/admin/websitecontent" element={<AdminContent />} />
+        <Route path="/admin/websitecontent/edit-terms" element={<AdminEditTerms />} />
       </Route>
 
       {/* 4. POS ROUTES (/pos/*) */}

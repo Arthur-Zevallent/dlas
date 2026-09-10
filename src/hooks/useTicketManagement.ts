@@ -5,7 +5,7 @@ import {
   getPackageTickets,
   deleteTicket,
 } from "../services/api/ticketApi";
-import { mapTicketApiToTicket } from "../services/api/mappers/ticketAdapter";
+import { mapTicketApiToTicket } from "../services/api/ticketAdapter";
 
 /**
  * Hook untuk manage semua data tiket (fetch, delete, filter)
